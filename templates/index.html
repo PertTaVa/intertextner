@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>INTERTEXTNER MVP</title>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<h1>INTERTEXTNER MVP</h1>
+
+<div class="container">
+  <div class="panel">
+    <h2>Источник</h2>
+    <textarea id="sourceText" placeholder="Вставьте текст источник..."></textarea>
+  </div>
+
+  <div class="panel">
+    <h2>Сравнение</h2>
+    <textarea id="compareText" placeholder="Вставьте текст для сравнения..."></textarea>
+  </div>
+</div>
+
+<div class="panel">
+  <button onclick="analyzeNER()">Анализировать</button>
+</div>
+
+<div class="panel">
+  <h2>Фильтр по типу сущности</h2>
+  <label><input type="checkbox" class="entityFilter" value="PER" checked> PER</label>
+  <label><input type="checkbox" class="entityFilter" value="LOC" checked> LOC</label>
+  <label><input type="checkbox" class="entityFilter" value="ORG" checked> ORG</label>
+  <label><input type="checkbox" class="entityFilter" value="MISC" checked> MISC</label>
+</div>
+
+<div class="results">
+  <h2>Совпадения</h2>
+  <table id="matchesTable">
+    <thead>
+      <tr><th>Сущность</th><th>Тип</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<div class="graphPanel">
+  <h2>Граф совпадений</h2>
+  <svg id="graph"></svg>
+</div>
+
+<script src="{{ url_for('static', filename='js/graph.js') }}"></script>
+</body>
+</html>
