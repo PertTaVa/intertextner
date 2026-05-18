@@ -20,15 +20,14 @@ Technologies
 - **HTML, CSS, JavaScript** — frontend  
 - **D3.js** — interactive graph visualization  
 - **spaCy & Stanza** — NER extraction (Russian, Finnish, Swedish)  
----
 
-## Contact
+Contact
 GitHub @PertTaVa   
 
 
 📚 INTERTEXTNER (МРП)
 
-## Описание
+Описание
 Это минимальный рабочий прототип (MVP) для анализа интертекстуальности текста через Named Entity Recognition (NER) с помощью spaCy.  
 
 Проект позволяет:
@@ -40,10 +39,9 @@ GitHub @PertTaVa
 - Подсветка и tooltip с контекстом текста при наведении.  
 - Возможность перетаскивать узлы мышью для удобной визуализации.
 
-## Контакты
+Контакты
 Татьяна Перцева - автор проекта
 GitHub @PertTaVa 
----
 
 
 
