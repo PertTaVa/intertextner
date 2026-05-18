@@ -1,54 +1,443 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<title>INTERTEXTNER MVP</title>
-<script src="https://d3js.org/d3.v7.min.js"></script>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <meta charset="UTF-8">
+    <title>INTERTEXTNER MVP</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* Дополнительные стили прямо в HTML для гарантии */
+        .stats-panel {
+            margin: 20px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .stat-card {
+            padding: 10px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+        }
+        .export-btn {
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        .export-btn:hover {
+            background: #45a049;
+        }
+        .entity-details {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        #matchesTable td {
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        #matchesTable td:hover {
+            white-space: normal;
+            background: #f0f0f0;
+        }
+    </style>
 </head>
 <body>
 
-<h1>INTERTEXTNER MVP</h1>
+<h1>INTERTEXTNER</h1>
 
 <div class="container">
-  <div class="panel">
-    <h2>Источник</h2>
-    <textarea id="sourceText" placeholder="Вставьте текст источник..."></textarea>
-  </div>
+    <div class="panel">
+        <h2>Источник</h2>
+        <textarea id="sourceText" placeholder="Вставьте текст источник..." rows="10"></textarea>
+        <div style="margin-top: 10px;">
+            <label>Язык: 
+                <select id="sourceLang">
+                    <option value="ru" selected>Русский</option>
+                    <option value="fi">Финский</option>
+                    <option value="sv">Шведский</option>
+                </select>
+            </label>
+        </div>
+    </div>
 
-  <div class="panel">
-    <h2>Сравнение</h2>
-    <textarea id="compareText" placeholder="Вставьте текст для сравнения..."></textarea>
-  </div>
+    <div class="panel">
+        <h2>Сравнение</h2>
+        <textarea id="compareText" placeholder="Вставьте текст для сравнения..." rows="10"></textarea>
+        <div style="margin-top: 10px;">
+            <label>Язык: 
+                <select id="compareLang">
+                    <option value="ru" selected>Русский</option>
+                    <option value="fi">Финский</option>
+                    <option value="sv">Шведский</option>
+                </select>
+            </label>
+        </div>
+    </div>
 </div>
 
 <div class="panel">
-  <button onclick="analyzeNER()">Анализировать</button>
+    <button onclick="analyzeNER()">Анализировать</button>
+</div>
+
+<!-- Панель статистики (скрыта по умолчанию) -->
+<div id="statsPanel" class="stats-panel" style="display: none;">
+    <h2>Статистика анализа</h2>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value" id="statSourceTotal">0</div>
+            <div class="stat-label">Сущностей в Источнике (всего)</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="statCompareTotal">0</div>
+            <div class="stat-label">Сущностей в Сравнении (всего)</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="statMatches">0</div>
+            <div class="stat-label">общих сущностей</div>
+        </div>
+    </div>
+    <div>
+        <button class="export-btn" onclick="exportToCSV()"> Экспорт CSV</button>
+        <button class="export-btn" onclick="exportGraph()"> Сохранить граф</button>
+    </div>
 </div>
 
 <div class="panel">
-  <h2>Фильтр по типу сущности</h2>
-  <label><input type="checkbox" class="entityFilter" value="PER" checked> PER</label>
-  <label><input type="checkbox" class="entityFilter" value="LOC" checked> LOC</label>
-  <label><input type="checkbox" class="entityFilter" value="ORG" checked> ORG</label>
-  <label><input type="checkbox" class="entityFilter" value="MISC" checked> MISC</label>
+    <h2>Фильтр по типу сущности</h2>
+    <label><input type="checkbox" class="entityFilter" value="PER" checked onchange="filterGraph()"> PER (персонажи)</label>
+    <label><input type="checkbox" class="entityFilter" value="LOC" checked onchange="filterGraph()"> LOC (места)</label>
+    <label><input type="checkbox" class="entityFilter" value="ORG" checked onchange="filterGraph()"> ORG (организации)</label>
+    <label><input type="checkbox" class="entityFilter" value="DATE" checked onchange="filterGraph()"> DATE (даты)</label>
+    <label><input type="checkbox" class="entityFilter" value="MISC" checked onchange="filterGraph()"> MISC (прочее)</label>
 </div>
 
 <div class="results">
-  <h2>Совпадения</h2>
-  <table id="matchesTable">
-    <thead>
-      <tr><th>Сущность</th><th>Тип</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+    <h2>Совпадения</h2>
+    <table id="matchesTable">
+        <thead>
+            <tr>
+                <th>Сущность</th>
+                <th>Тип</th>
+                <th>Частота</th>
+                <th>В Источник</th>
+                <th>В Сравнение</th>
+                <th>Варианты</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
 </div>
 
 <div class="graphPanel">
-  <h2>Граф совпадений</h2>
-  <svg id="graph"></svg>
+    <h2>Граф совпадений</h2>
+    <svg id="graph" width="1000" height="600"></svg>
 </div>
 
-<script src="{{ url_for('static', filename='js/graph.js') }}"></script>
+<script>
+// Глобальные переменные для хранения данных
+let currentData = null;
+let currentGraph = null;
+
+function analyzeNER() {
+    const sourceText = document.getElementById('sourceText').value;
+    const compareText = document.getElementById('compareText').value;
+    const sourceLang = document.getElementById('sourceLang').value;
+    const compareLang = document.getElementById('compareLang').value;
+    
+    if (!sourceText || !compareText) {
+        alert('Пожалуйста, введите оба текста');
+        return;
+    }
+    
+    fetch('/ner', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            source: sourceText,
+            compare: compareText,
+            source_lang: sourceLang,
+            compare_lang: compareLang
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Получены данные:', data);
+        currentData = data;
+        
+        // Показываем панель статистики
+        document.getElementById('statsPanel').style.display = 'block';
+        
+        // Обновляем статистику
+        if (data.stats) {
+            document.getElementById('statSourceTotal').textContent = 
+                `${data.stats.source_total} (${data.stats.source_unique} уник.)`;
+            document.getElementById('statCompareTotal').textContent = 
+                `${data.stats.compare_total} (${data.stats.compare_unique} уник.)`;
+            document.getElementById('statMatches').textContent = data.stats.matches_count;
+        }
+        
+        // Обновляем таблицу
+        updateMatchesTable(data.match_details);
+        
+        // Обновляем граф
+        if (data.graph) {
+            drawGraph(data.graph);
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка:', error);
+        alert('Ошибка при анализе текстов');
+    });
+}
+
+function updateMatchesTable(matches) {
+    const tbody = document.querySelector('#matchesTable tbody');
+    tbody.innerHTML = '';
+    
+    if (!matches || matches.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Нет совпадений</td></tr>';
+        return;
+    }
+    
+    matches.forEach(m => {
+        const row = tbody.insertRow();
+        
+        // Сущность
+        const cellEntity = row.insertCell();
+        cellEntity.textContent = m.text;
+        
+        // Тип
+        const cellType = row.insertCell();
+        cellType.textContent = m.label;
+        
+        // Частота (всего)
+        const cellTotal = row.insertCell();
+        cellTotal.textContent = m.total_count || (m.source_count + m.compare_count);
+        
+        // В Source
+        const cellSource = row.insertCell();
+        cellSource.textContent = m.source_count;
+        if (m.source_originals && m.source_originals.length > 0) {
+            cellSource.title = `Варианты: ${m.source_originals.join(', ')}`;
+        }
+        
+        // В Comparison
+        const cellCompare = row.insertCell();
+        cellCompare.textContent = m.compare_count;
+        if (m.compare_originals && m.compare_originals.length > 0) {
+            cellCompare.title = `Варианты: ${m.compare_originals.join(', ')}`;
+        }
+        
+        // Варианты
+        const cellVariants = row.insertCell();
+        let variants = [];
+        if (m.source_originals) variants.push(...m.source_originals);
+        if (m.compare_originals) variants.push(...m.compare_originals);
+        cellVariants.textContent = [...new Set(variants)].join(', ');
+        cellVariants.classList.add('entity-details');
+    });
+}
+
+function drawGraph(graphData) {
+    // Очищаем предыдущий граф
+    d3.select('#graph').selectAll('*').remove();
+    
+    const width = 1000;
+    const height = 600;
+    
+    // Получаем активные фильтры
+    const activeFilters = Array.from(document.querySelectorAll('.entityFilter:checked'))
+        .map(cb => cb.value);
+    
+    // Фильтруем узлы
+    let nodes = graphData.nodes.filter(node => 
+        node.group === 'TEXT' || activeFilters.includes(node.group)
+    );
+    
+    // Создаем множество допустимых ID
+    const validIds = new Set(nodes.map(n => n.id));
+    
+    // Фильтруем связи
+    let links = graphData.links.filter(link => 
+        validIds.has(link.source) && validIds.has(link.target)
+    );
+    
+    // Создаем force-симуляцию
+    const simulation = d3.forceSimulation(nodes)
+        .force('link', d3.forceLink(links).id(d => d.id).distance(150))
+        .force('charge', d3.forceManyBody().strength(-500))
+        .force('center', d3.forceCenter(width / 2, height / 2));
+    
+    const svg = d3.select('#graph')
+        .attr('viewBox', [0, 0, width, height]);
+    
+    // Добавляем стрелки для связей
+    svg.append('defs').selectAll('marker')
+        .data(['end'])
+        .enter().append('marker')
+        .attr('id', String)
+        .attr('viewBox', '0 -5 10 10')
+        .attr('refX', 25)
+        .attr('refY', 0)
+        .attr('markerWidth', 6)
+        .attr('markerHeight', 6)
+        .attr('orient', 'auto')
+        .append('path')
+        .attr('fill', '#999')
+        .attr('d', 'M0,-5L10,0L0,5');
+    
+    // Рисуем связи
+    const link = svg.append('g')
+        .selectAll('line')
+        .data(links)
+        .enter().append('line')
+        .attr('stroke', '#999')
+        .attr('stroke-opacity', 0.6)
+        .attr('stroke-width', d => Math.sqrt(d.value) || 1)
+        .attr('marker-end', 'url(#end)');
+    
+    // Рисуем узлы
+    const node = svg.append('g')
+        .selectAll('circle')
+        .data(nodes)
+        .enter().append('circle')
+        .attr('r', d => d.size || 10)
+        .attr('fill', d => {
+            if (d.group === 'TEXT') return '#cccccc';
+            const colors = {
+                'PER': '#ff7f7f',
+                'LOC': '#7fbfff',
+                'ORG': '#bfff7f',
+                'DATE': '#ffbf7f',
+                'MISC': '#d3d3d3'
+            };
+            return colors[d.group] || '#d3d3d3';
+        })
+        .call(d3.drag()
+            .on('start', dragstarted)
+            .on('drag', dragged)
+            .on('end', dragended));
+    
+    // Добавляем подписи
+    const label = svg.append('g')
+        .selectAll('text')
+        .data(nodes)
+        .enter().append('text')
+        .text(d => d.id.length > 15 ? d.id.substring(0, 12) + '...' : d.id)
+        .attr('font-size', '10px')
+        .attr('dx', 12)
+        .attr('dy', 4);
+    
+    // Тултипы
+    node.append('title')
+        .text(d => {
+            if (d.frequency) {
+                return `${d.id}\nЧастота: ${d.frequency}`;
+            }
+            return d.id;
+        });
+    
+    // Обновляем позиции
+    simulation.on('tick', () => {
+        link
+            .attr('x1', d => d.source.x)
+            .attr('y1', d => d.source.y)
+            .attr('x2', d => d.target.x)
+            .attr('y2', d => d.target.y);
+        
+        node
+            .attr('cx', d => d.x)
+            .attr('cy', d => d.y);
+        
+        label
+            .attr('x', d => d.x)
+            .attr('y', d => d.y);
+    });
+    
+    // Функции для перетаскивания
+    function dragstarted(event) {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        event.subject.fx = event.subject.x;
+        event.subject.fy = event.subject.y;
+    }
+    
+    function dragged(event) {
+        event.subject.fx = event.x;
+        event.subject.fy = event.y;
+    }
+    
+    function dragended(event) {
+        if (!event.active) simulation.alphaTarget(0);
+        event.subject.fx = null;
+        event.subject.fy = null;
+    }
+}
+
+function filterGraph() {
+    if (currentData && currentData.graph) {
+        drawGraph(currentData.graph);
+    }
+}
+
+function exportToCSV() {
+    if (!currentData || !currentData.match_details || currentData.match_details.length === 0) {
+        alert('Нет данных для экспорта');
+        return;
+    }
+    
+    let csv = "Сущность,Тип,Частота в Источнике,Частота в Сравнении,Всего,Варианты в Источнике,Варианты в Сравнении \n";
+    
+    currentData.match_details.forEach(e => {
+        let sourceVariants = e.source_originals ? e.source_originals.join('; ') : '';
+        let compareVariants = e.compare_originals ? e.compare_originals.join('; ') : '';
+        csv += `"${e.text}",${e.label},${e.source_count},${e.compare_count},${e.total_count || (e.source_count + e.compare_count)},"${sourceVariants}","${compareVariants}"\n`;
+    });
+    
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'intertextual_matches.csv';
+    link.click();
+}
+
+function exportGraph() {
+    // Простой способ: сохранить SVG как изображение
+    const svg = document.getElementById('graph');
+    const serializer = new XMLSerializer();
+    const source = serializer.serializeToString(svg);
+    
+    const blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'graph.svg';
+    link.click();
+}
+</script>
+
 </body>
 </html>
