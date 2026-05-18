@@ -1,12 +1,12 @@
-# 📚 INTERTEXTNER 
+📚 INTERTEXTNER 
 
-**INTERTEXTNER — Trace characters, places, and events across texts.**  
+INTERTEXTNER — Trace characters, places, and events across texts. 
 ---
-## About the Project
+About the Project
 INTERTEXTNER is a minimal working prototype (MVP) for analyzing text intertextuality using **Named Entity Recognition (NER)** with **spaCy**.  
 It allows you to compare texts and identify shared entities, highlighting connections between them.
 
-**Key Features:**
+Key Features:
 - Upload two texts: **Source** and **Comparison**  
 - Extract entities (PER, LOC, ORG, DATE, MISC)  
 - Display entity matches in a **table** and an **interactive D3.js graph**  
@@ -16,7 +16,7 @@ It allows you to compare texts and identify shared entities, highlighting connec
 
 ---
 
-## Technologies
+Technologies
 - **Python & Flask** — backend  
 - **HTML, CSS, JavaScript** — frontend  
 - **D3.js** — interactive graph visualization  
@@ -27,7 +27,7 @@ It allows you to compare texts and identify shared entities, highlighting connec
 GitHub @PertTaVa   
 
 
-# 📚 📚 INTERTEXTNER MVP
+📚 INTERTEXTNER (МРП)
 
 ## Описание
 Это минимальный рабочий прототип (MVP) для анализа интертекстуальности текста через Named Entity Recognition (NER) с помощью spaCy.  
