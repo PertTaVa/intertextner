@@ -1,7 +1,7 @@
 📚 INTERTEXTNER 
 
 INTERTEXTNER — Trace characters, places, and events across texts. 
----
+
 About the Project
 INTERTEXTNER is a minimal working prototype (MVP) for analyzing text intertextuality using **Named Entity Recognition (NER)** with **spaCy**.  
 It allows you to compare texts and identify shared entities, highlighting connections between them.
@@ -14,7 +14,6 @@ Key Features:
 - Highlight entities and show **tooltips with text context** on hover  
 - Drag nodes with the mouse for easy visualization  
 
----
 
 Technologies
 - **Python & Flask** — backend  
